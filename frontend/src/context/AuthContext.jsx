@@ -16,9 +16,19 @@ export const AuthProvider = ({ children }) => {
 
   // Cargar usuario del localStorage al iniciar
   useEffect(() => {
+    const token = localStorage.getItem("token");
     const savedUser = localStorage.getItem("user");
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
+    
+    // Solo considera autenticado si hay AMBOS: token y user
+    if (token && savedUser) {
+      try {
+        setUser(JSON.parse(savedUser));
+      } catch (error) {
+        console.error("Error al parsear usuario:", error);
+        // Si hay error, limpiar datos corruptos
+        localStorage.removeItem("user");
+        localStorage.removeItem("token");
+      }
     }
     setLoading(false);
   }, []);
@@ -34,12 +44,19 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem("token");
   };
 
+  const updateUser = (updatedData) => {
+    const newUserData = { ...user, ...updatedData };
+    setUser(newUserData);
+    localStorage.setItem("user", JSON.stringify(newUserData));
+  };
+
   const value = {
     user,
     login,
     logout,
+    updateUser,
     loading,
-    isAuthenticated: !!user,
+    isAuthenticated: !!user && !!localStorage.getItem("token"),
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

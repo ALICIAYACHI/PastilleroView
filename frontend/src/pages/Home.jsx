@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import api from "../api";
@@ -7,24 +8,27 @@ import AddMedicationModal from "../components/AddMedicationModal";
 
 export default function Home() {
   const navigate = useNavigate();
-  const { user, logout, isAuthenticated } = useAuth();
+  const { user, logout, isAuthenticated, loading: authLoading } = useAuth();
+
   const [tratamientos, setTratamientos] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [notificationTimers, setNotificationTimers] = useState([]);
 
-  // 🔒 Redirigir si no está autenticado
+  // Protección de ruta - verificar autenticación
   useEffect(() => {
-    if (!isAuthenticated) {
-      navigate("/login");
+    // Esperar a que termine de cargar el auth
+    if (!authLoading && !isAuthenticated) {
+      navigate("/login", { replace: true });
     }
-  }, [isAuthenticated, navigate]);
+  }, [authLoading, isAuthenticated, navigate]);
 
-  // 📦 Cargar tratamientos
+  // Cargar tratamientos cuando esté autenticado
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isAuthenticated && !authLoading) {
       loadTratamientos();
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, authLoading]);
 
   const loadTratamientos = () => {
     setLoading(true);
@@ -32,25 +36,102 @@ export default function Home() {
       .get("tratamientos/")
       .then((res) => {
         setTratamientos(res.data);
+        programarNotificaciones(res.data);
       })
+
       .catch((err) => {
         console.error("Error al cargar tratamientos:", err);
       })
       .finally(() => setLoading(false));
   };
 
+  // Programar notificaciones locales para las tomas de hoy
+  const programarNotificaciones = (listaTratamientos) => {
+    // Limpiar timers anteriores
+    notificationTimers.forEach((id) => clearTimeout(id));
+
+    const notifPref = localStorage.getItem("notificaciones") ?? "true";
+    if (notifPref !== "true") {
+      setNotificationTimers([]);
+      return;
+    }
+
+    if (typeof Notification !== "undefined" && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+
+    const now = new Date();
+    const hoyStr = now.toISOString().split("T")[0];
+    const nuevosTimers = [];
+
+    listaTratamientos.forEach((t) => {
+      if (!t.activo || !t.hora_toma || !t.fecha_inicio) return;
+
+      const fechaInicio = new Date(t.fecha_inicio);
+      const fechaFin = t.fecha_fin ? new Date(t.fecha_fin) : null;
+      const hoyDate = new Date(hoyStr + "T00:00:00");
+      if (hoyDate < fechaInicio || (fechaFin && hoyDate > fechaFin)) return;
+
+      const [h, m] = t.hora_toma.split(":");
+      const fechaToma = new Date(hoyStr + `T${h.padStart(2, "0")}:${m.padStart(2, "0")}:00`);
+      const diffMs = fechaToma.getTime() - now.getTime();
+      if (diffMs <= 0) return; // ya pasó
+
+      const id = setTimeout(() => {
+        const titulo = "Recordatorio de medicación";
+        const cuerpo = `No olvides tomar tu pastilla: ${t.nombre_pastilla}`;
+
+        if (typeof Notification !== "undefined" && Notification.permission === "granted") {
+          new Notification(titulo, { body: cuerpo });
+        }
+
+        if (navigator.vibrate) {
+          navigator.vibrate([200, 100, 200]);
+        }
+      }, diffMs);
+
+      nuevosTimers.push(id);
+    });
+
+    setNotificationTimers(nuevosTimers);
+  };
+
+  // Limpiar timers al desmontar
+  useEffect(() => {
+    return () => {
+      notificationTimers.forEach((id) => clearTimeout(id));
+    };
+  }, [notificationTimers]);
+
   const getTratamiento = (comp) =>
     tratamientos.find((t) => t.compartimento === comp);
 
   const handleLogout = () => {
     logout();
-    navigate("/");
+    navigate("/", { replace: true });
   };
 
   const displayName =
     user?.name || user?.username || user?.email?.split("@")[0] || "Usuario";
 
   const allCompartmentsFilled = [1, 2, 3, 4].every((c) => getTratamiento(c));
+
+  // Mostrar loading mientras verifica autenticación
+  if (authLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-gradient-to-br from-emerald-50 to-teal-50">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-emerald-700 font-medium">Verificando sesión...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Si no está autenticado, no renderizar nada (ya está redirigiendo)
+  if (!isAuthenticated) {
+    return null;
+  }
 
   return (
     <div className="flex h-screen bg-gradient-to-br from-emerald-50 to-teal-50 overflow-hidden">

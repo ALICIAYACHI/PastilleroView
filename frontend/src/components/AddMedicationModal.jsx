@@ -1,11 +1,12 @@
 import React, { useState } from "react";
+
 import api from "../api";
 
 const colors = [
-  { hex: "#f28b82", name: "Rojo" },
-  { hex: "#fbbc04", name: "Amarillo" },
-  { hex: "#34a853", name: "Verde" },
-  { hex: "#4285f4", name: "Azul" }
+  { hex: "#ffb3b3", name: "Rojo", ring: "#ff6b6b" },
+  { hex: "#ffe4a3", name: "Amarillo", ring: "#ffc107" },
+  { hex: "#a8e6cf", name: "Verde", ring: "#4caf50" },
+  { hex: "#a3c9ff", name: "Azul", ring: "#2196f3" }
 ];
 
 export default function AddMedicationModal({ isOpen, onClose, onSuccess }) {
@@ -25,7 +26,27 @@ export default function AddMedicationModal({ isOpen, onClose, onSuccess }) {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm({ ...form, [name]: value });
+    const updated = { ...form, [name]: value };
+
+    // Recalcular fecha_fin automáticamente para tratamientos diarios
+    if (
+      (name === "repeticion" || name === "fecha_inicio" || name === "stock" || name === "dosis") &&
+      (name === "repeticion" ? value === "DIARIO" : updated.repeticion === "DIARIO")
+    ) {
+      const dias = Math.floor((parseInt(updated.stock || 0, 10)) / (parseInt(updated.dosis || 0, 10) || 1));
+
+      if (updated.fecha_inicio && dias > 0) {
+        const start = new Date(updated.fecha_inicio + "T00:00:00");
+        const fin = new Date(start);
+        fin.setDate(start.getDate() + dias - 1);
+        const year = fin.getFullYear();
+        const month = String(fin.getMonth() + 1).padStart(2, "0");
+        const day = String(fin.getDate()).padStart(2, "0");
+        updated.fecha_fin = `${year}-${month}-${day}`;
+      }
+    }
+
+    setForm(updated);
   };
 
   const handleSubmit = (e) => {
@@ -82,7 +103,7 @@ export default function AddMedicationModal({ isOpen, onClose, onSuccess }) {
   return (
     <div className="fixed inset-0 bg-gradient-to-br from-emerald-50 to-teal-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
       {/* Header */}
-      <div className="absolute top-0 left-0 right-0 bg-white shadow-md z-10">
+      <div className="fixed top-0 left-0 right-0 bg-white shadow-md z-10">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center gap-4">
           <button
             onClick={onClose}
@@ -106,7 +127,7 @@ export default function AddMedicationModal({ isOpen, onClose, onSuccess }) {
       </div>
 
       {/* Form */}
-      <div className="w-full max-w-xl mt-24 mb-8">
+      <div className="w-full max-w-xl mt-40 mb-8">
         <form onSubmit={handleSubmit} className="bg-white p-8 rounded-2xl shadow-2xl space-y-6 border border-emerald-100">
           {/* Header del formulario */}
           <div className="text-center">
@@ -131,10 +152,16 @@ export default function AddMedicationModal({ isOpen, onClose, onSuccess }) {
                   onClick={() => setForm({ ...form, compartimento: index + 1 })}
                   className={`h-20 rounded-xl transition-all ${
                     form.compartimento === index + 1
-                      ? 'ring-4 ring-gray-800 scale-105'
+                      ? 'ring-4 scale-105'
                       : 'ring-2 ring-gray-200 hover:scale-105'
                   }`}
-                  style={{ backgroundColor: color.hex }}
+                  style={{ 
+                    backgroundColor: color.hex,
+                    ...(form.compartimento === index + 1 && {
+                      '--tw-ring-color': color.ring,
+                      borderColor: color.ring
+                    })
+                  }}
                 >
                   <div className="text-white font-bold text-lg">
                     {index + 1}
@@ -310,7 +337,13 @@ export default function AddMedicationModal({ isOpen, onClose, onSuccess }) {
                 value={form.fecha_fin}
                 onChange={handleChange}
                 className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-emerald-400 outline-none"
+                readOnly={form.repeticion === "DIARIO"}
               />
+              {form.repeticion === "DIARIO" && (
+                <p className="text-xs text-gray-500 mt-1">
+                  Calculada automáticamente según stock, dosis y fecha de inicio.
+                </p>
+              )}
             </div>
           </div>
 

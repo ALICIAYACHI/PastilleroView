@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils import timezone
+from datetime import timedelta
 
 class Tratamiento(models.Model):
     REPETICION_CHOICES = [
@@ -22,6 +23,29 @@ class Tratamiento(models.Model):
 
     def __str__(self):
         return f"{self.nombre_pastilla} - Compartimento {self.compartimento}"
+
+    def save(self, *args, **kwargs):
+        """Calcula fecha_fin automáticamente para tratamientos diarios si no se ha proporcionado.
+
+        Regla: si repeticion == "DIARIO" y fecha_fin es None, y existen fecha_inicio, stock y dosis > 0,
+        entonces:
+            dias = stock // dosis
+            fecha_fin = fecha_inicio + (dias - 1) días
+        """
+        if (
+            self.repeticion == "DIARIO"
+            and not self.fecha_fin
+            and self.fecha_inicio
+            and self.stock is not None
+            and self.dosis
+            and self.dosis > 0
+        ):
+            dias_tratamiento = self.stock // self.dosis
+            if dias_tratamiento > 0:
+                # Ejemplo: 10 pastillas, dosis 1, fecha_inicio 01 → dura 10 días (01 al 10)
+                self.fecha_fin = self.fecha_inicio + timedelta(days=dias_tratamiento - 1)
+
+        super().save(*args, **kwargs)
 
 
 class HistorialToma(models.Model):

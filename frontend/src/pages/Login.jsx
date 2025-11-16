@@ -10,6 +10,8 @@ export default function Login() {
     email: "",
     password: ""
   });
+  const [rememberMe, setRememberMe] = useState(false);
+
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -19,6 +21,24 @@ export default function Login() {
       navigate("/dashboard");
     }
   }, [isAuthenticated, navigate]);
+
+  // Cargar credenciales recordadas (si existen)
+  useEffect(() => {
+    const savedRemember = localStorage.getItem("rememberMe") === "true";
+    const savedCreds = localStorage.getItem("rememberedCredentials");
+
+    if (savedRemember && savedCreds) {
+      try {
+        const { email, password } = JSON.parse(savedCreds);
+        setFormData({ email: email || "", password: password || "" });
+        setRememberMe(true);
+      } catch (e) {
+        console.error("Error al leer credenciales recordadas:", e);
+        localStorage.removeItem("rememberMe");
+        localStorage.removeItem("rememberedCredentials");
+      }
+    }
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -39,11 +59,31 @@ export default function Login() {
       
       if (token && user) {
         localStorage.setItem("token", token);
+        if (rememberMe) {
+          localStorage.setItem("rememberMe", "true");
+          localStorage.setItem(
+            "rememberedCredentials",
+            JSON.stringify({ email: formData.email, password: formData.password })
+          );
+        } else {
+          localStorage.removeItem("rememberMe");
+          localStorage.removeItem("rememberedCredentials");
+        }
         login(user); // Guarda el usuario en el contexto
         navigate("/dashboard");
       } else if (token) {
         // Si solo viene token, crear usuario básico
         localStorage.setItem("token", token);
+        if (rememberMe) {
+          localStorage.setItem("rememberMe", "true");
+          localStorage.setItem(
+            "rememberedCredentials",
+            JSON.stringify({ email: formData.email, password: formData.password })
+          );
+        } else {
+          localStorage.removeItem("rememberMe");
+          localStorage.removeItem("rememberedCredentials");
+        }
         const basicUser = {
           email: formData.email,
           name: response.data.name || response.data.username || formData.email.split('@')[0],
@@ -128,6 +168,18 @@ export default function Login() {
               className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition"
               placeholder="••••••••"
             />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <label className="inline-flex items-center gap-2 text-sm text-gray-700">
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+              />
+              <span>Recordarme</span>
+            </label>
           </div>
 
           <button

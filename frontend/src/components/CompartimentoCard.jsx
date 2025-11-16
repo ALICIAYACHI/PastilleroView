@@ -2,7 +2,12 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../api";
 
-const colors = ["#f28b82", "#fbbc04", "#34a853", "#4285f4"];
+const colors = [
+  { hex: "#ffb3b3", name: "Rojo", ring: "#ff6b6b" },
+  { hex: "#ffe4a3", name: "Amarillo", ring: "#ffc107" },
+  { hex: "#a8e6cf", name: "Verde", ring: "#4caf50" },
+  { hex: "#a3c9ff", name: "Azul", ring: "#2196f3" }
+];
 
 const EditIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -21,6 +26,8 @@ const TrashIcon = () => (
 export default function CompartimentoCard({ compartimento, tratamiento, onDelete }) {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
+
+  const colorData = colors[compartimento - 1];
 
   const handleDelete = async () => {
     if (!tratamiento) return;
@@ -43,8 +50,11 @@ export default function CompartimentoCard({ compartimento, tratamiento, onDelete
   return (
     <>
       <div
-        className="rounded-3xl p-6 shadow-md"
-        style={{ backgroundColor: colors[compartimento - 1] }}
+        className="rounded-3xl p-6 shadow-md border-4"
+        style={{ 
+          backgroundColor: colorData.hex,
+          borderColor: colorData.ring
+        }}
       >
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
@@ -74,55 +84,55 @@ export default function CompartimentoCard({ compartimento, tratamiento, onDelete
           <div className="space-y-4">
             {/* Pastilla */}
             <div>
-              <p className="text-white/70 text-sm mb-1">Pastilla</p>
-              <p className="text-white text-2xl font-bold">{tratamiento.nombre_pastilla}</p>
+              <p className="text-gray-700 text-sm mb-1 font-medium">Pastilla</p>
+              <p className="text-gray-900 text-2xl font-bold">{tratamiento.nombre_pastilla}</p>
             </div>
 
             {/* Grid de información */}
             <div className="grid grid-cols-3 gap-4">
               <div>
-                <p className="text-white/70 text-sm mb-1">Dosis</p>
-                <p className="text-white text-3xl font-bold">{tratamiento.dosis}</p>
+                <p className="text-gray-700 text-sm mb-1 font-medium">Dosis</p>
+                <p className="text-gray-900 text-3xl font-bold">{tratamiento.dosis}</p>
               </div>
               <div>
-                <p className="text-white/70 text-sm mb-1">Stock</p>
-                <p className="text-white text-3xl font-bold">{tratamiento.stock}</p>
+                <p className="text-gray-700 text-sm mb-1 font-medium">Stock</p>
+                <p className="text-gray-900 text-3xl font-bold">{tratamiento.stock}</p>
               </div>
               <div>
-                <p className="text-white/70 text-sm mb-1">Repetición</p>
-                <p className="text-white text-xl font-bold">{tratamiento.repeticion}</p>
+                <p className="text-gray-700 text-sm mb-1 font-medium">Repetición</p>
+                <p className="text-gray-900 text-xl font-bold">{tratamiento.repeticion}</p>
               </div>
             </div>
 
             {/* Hora o información adicional */}
             {tratamiento.repeticion === "DIARIO" && (
               <div>
-                <p className="text-white/70 text-sm mb-1">Hora</p>
-                <p className="text-white text-3xl font-bold">{tratamiento.hora_toma}</p>
+                <p className="text-gray-700 text-sm mb-1 font-medium">Hora</p>
+                <p className="text-gray-900 text-3xl font-bold">{tratamiento.hora_toma}</p>
               </div>
             )}
             
             {tratamiento.repeticion === "SEMANAL" && (
               <div>
-                <p className="text-white/70 text-sm mb-1">Día</p>
-                <p className="text-white text-2xl font-bold">
+                <p className="text-gray-700 text-sm mb-1 font-medium">Día</p>
+                <p className="text-gray-900 text-2xl font-bold">
                   {["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"][tratamiento.dia_semana]}
                 </p>
-                <p className="text-white/70 text-sm mb-1 mt-3">Hora</p>
-                <p className="text-white text-3xl font-bold">{tratamiento.hora_toma}</p>
+                <p className="text-gray-700 text-sm mb-1 mt-3 font-medium">Hora</p>
+                <p className="text-gray-900 text-3xl font-bold">{tratamiento.hora_toma}</p>
               </div>
             )}
             
             {tratamiento.repeticion === "CADA_X_HORAS" && (
               <div>
-                <p className="text-white/70 text-sm mb-1">Cada</p>
-                <p className="text-white text-3xl font-bold">{tratamiento.intervalo_horas} horas</p>
+                <p className="text-gray-700 text-sm mb-1 font-medium">Cada</p>
+                <p className="text-gray-900 text-3xl font-bold">{tratamiento.intervalo_horas} horas</p>
               </div>
             )}
           </div>
         ) : (
           <div className="text-center py-8">
-            <p className="text-white text-xl">No configurado</p>
+            <p className="text-gray-800 text-xl font-semibold">No configurado</p>
           </div>
         )}
       </div>

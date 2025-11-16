@@ -154,3 +154,111 @@ def get_user_info(request):
             {'error': 'No autenticado'}, 
             status=status.HTTP_401_UNAUTHORIZED
         )
+
+
+# 🆕 NUEVOS ENDPOINTS PARA AJUSTES
+
+@api_view(['PUT'])
+def update_profile(request):
+    """
+    Actualizar información del perfil del usuario
+    Campos: name
+    """
+    if not request.user.is_authenticated:
+        return Response(
+            {'error': 'No autenticado'}, 
+            status=status.HTTP_401_UNAUTHORIZED
+        )
+    
+    name = request.data.get('name', '').strip()
+    
+    if not name:
+        return Response(
+            {'error': 'El nombre no puede estar vacío'}, 
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    try:
+        user = request.user
+        
+        # Separar nombre y apellido
+        name_parts = name.split()
+        first_name = name_parts[0] if name_parts else ''
+        last_name = ' '.join(name_parts[1:]) if len(name_parts) > 1 else ''
+        
+        user.first_name = first_name
+        user.last_name = last_name
+        user.save()
+        
+        return Response({
+            'message': 'Perfil actualizado correctamente',
+            'user': {
+                'id': user.id,
+                'name': user.get_full_name() or user.username,
+                'email': user.email,
+                'username': user.username
+            }
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response(
+            {'error': f'Error al actualizar perfil: {str(e)}'}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
+@api_view(['POST'])
+def change_password(request):
+    """
+    Cambiar contraseña del usuario
+    Campos esperados: current_password, new_password
+    """
+    if not request.user.is_authenticated:
+        return Response(
+            {'error': 'No autenticado'}, 
+            status=status.HTTP_401_UNAUTHORIZED
+        )
+    
+    current_password = request.data.get('current_password', '')
+    new_password = request.data.get('new_password', '')
+    
+    # Validaciones
+    if not current_password or not new_password:
+        return Response(
+            {'error': 'Contraseña actual y nueva son requeridas'}, 
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    if len(new_password) < 6:
+        return Response(
+            {'error': 'La nueva contraseña debe tener al menos 6 caracteres'}, 
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    # Verificar que la contraseña actual sea correcta
+    user = request.user
+    if not user.check_password(current_password):
+        return Response(
+            {'error': 'Contraseña actual incorrecta'}, 
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    try:
+        # Cambiar contraseña
+        user.set_password(new_password)
+        user.save()
+        
+        # Actualizar el token (opcional, para mantener la sesión)
+        Token.objects.filter(user=user).delete()
+        new_token = Token.objects.create(user=user)
+        
+        return Response({
+            'message': 'Contraseña cambiada exitosamente',
+            'token': new_token.key  # Nuevo token para mantener la sesión
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response(
+            {'error': f'Error al cambiar contraseña: {str(e)}'}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )

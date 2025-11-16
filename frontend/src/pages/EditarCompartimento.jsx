@@ -70,8 +70,8 @@ export default function EditarCompartimento() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-50">
-      {/* Header con botón de regreso */}
-      <div className="bg-white shadow-md">
+      {/* Header con botón de regreso - FIJO */}
+      <div className="fixed top-0 left-0 right-0 bg-white shadow-md z-50">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center gap-4">
           <button
             onClick={() => navigate("/dashboard")}
@@ -94,8 +94,8 @@ export default function EditarCompartimento() {
         </div>
       </div>
 
-      {/* Formulario */}
-      <div className="flex items-center justify-center px-4 py-8">
+      {/* Formulario con padding-top para compensar el header fijo */}
+      <div className="flex items-center justify-center px-4 py-8 pt-24">
         <form
           onSubmit={handleSubmit}
           className="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-xl space-y-6 border border-emerald-100"

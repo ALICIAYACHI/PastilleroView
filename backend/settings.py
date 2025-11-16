@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -46,7 +47,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware',  # ✅ mantenerlo
+    'corsheaders.middleware.CorsMiddleware',  # mantenerlo
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -129,7 +130,6 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-
 ALLOWED_HOSTS = ["*"]
 
 # Agregar al final del archivo:
@@ -139,3 +139,7 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.SessionAuthentication',
     ],
 }
+
+# Configuración de Telegram: se leen desde variables de entorno
+TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "8551131249:AAEfry7Q9v-eVNXVq2atPW3WaS5y4vAtrIY")
+TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "5936427853")
