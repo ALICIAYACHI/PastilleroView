@@ -5,7 +5,7 @@ import requests
 import json
 
 # Configuración
-BACKEND_URL = "http://10.147.1.123:8000/api/tratamientos/"
+BACKEND_URL = "https://pastillero.onrender.com/api/tratamientos/"
 ARDUINO_IP = "10.147.1.1"  # IP del ESP32
 
 print("=" * 60)
@@ -56,7 +56,7 @@ except Exception as e:
 # 3. Verificar configuración en Django
 print("\n3. Verificando configuración Django...")
 try:
-    config_url = "http://10.147.1.123:8000/admin/pastillas/configuracionarduino/"
+    config_url = "https://pastillero.onrender.com/admin/pastillas/configuracionarduino/"
     print(f"   Ve a: {config_url}")
     print(f"   Asegúrate de que:")
     print(f"      - IP Arduino: {ARDUINO_IP}")

@@ -1,4 +1,5 @@
 #include <WiFi.h>
+#include <WiFiClientSecure.h>
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
 #include "time.h"
@@ -7,9 +8,9 @@
 
 const char* ssid = "Alicia";
 const char* password = "lizzy1506";
-const char* backendURL = "http://10.147.1.123:8000/api/tratamientos/";
-const char* registrarTomaURL = "http://10.147.1.123:8000/api/registrar-toma/";
-const char* notificarRecordatorioURL = "http://10.147.1.123:8000/api/notificar-recordatorio/";
+const char* backendURL = "https://pastillero.onrender.com/api/tratamientos/";
+const char* registrarTomaURL = "https://pastillero.onrender.com/api/registrar-toma/";
+const char* notificarRecordatorioURL = "https://pastillero.onrender.com/api/notificar-recordatorio/";
 
 const int LED_PIN = 2;
 const int BUTTON_PIN = 4;
@@ -223,8 +224,10 @@ void loop() {
 
 void obtenerTratamientos() {
   if (WiFi.status() == WL_CONNECTED) {
+    WiFiClientSecure client;
+    client.setInsecure();
     HTTPClient http;
-    http.begin(backendURL);
+    http.begin(client, backendURL);
     int httpCode = http.GET();
 
     if (httpCode == 200) {
@@ -385,8 +388,10 @@ void actualizarTratamientosDesdeJSON(DynamicJsonDocument& doc) {
 
 void notificarRecordatorioEnBackend(int tratamientoId) {
   if (WiFi.status() == WL_CONNECTED) {
+    WiFiClientSecure client;
+    client.setInsecure();
     HTTPClient http;
-    http.begin(notificarRecordatorioURL);
+    http.begin(client, notificarRecordatorioURL);
     http.addHeader("Content-Type", "application/json");
 
     StaticJsonDocument<128> doc;
@@ -520,8 +525,10 @@ void manejarBoton(int compartimientosActivos[], int count) {
 
 void registrarTomaEnBackend(int tratamientoId, String estado) {
   if (WiFi.status() == WL_CONNECTED) {
+    WiFiClientSecure client;
+    client.setInsecure();
     HTTPClient http;
-    http.begin(registrarTomaURL);
+    http.begin(client, registrarTomaURL);
     http.addHeader("Content-Type", "application/json");
 
     // Crear JSON
