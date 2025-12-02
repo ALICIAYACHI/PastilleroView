@@ -19,7 +19,6 @@ export default function Register() {
     e.preventDefault();
     setError("");
 
-    // Validaciones
     if (formData.password !== formData.confirmPassword) {
       setError("Las contraseñas no coinciden");
       return;
@@ -33,8 +32,16 @@ export default function Register() {
     setLoading(true);
 
     try {
-      // Datos para enviar al backend - solo los campos requeridos
+      // Generar username automático sin espacios
+      const autoUsername = formData.name
+        .toLowerCase()
+        .trim()
+        .replace(/\s+/g, "_")       // reemplazar espacios por _
+        .replace(/[^a-z0-9_.-]/g, "") // eliminar caracteres no válidos
+        .substring(0, 20);           // evitar exceder el límite
+
       const registerData = {
+        username: autoUsername,     // <── CORREGIDO
         name: formData.name,
         email: formData.email,
         password: formData.password
@@ -42,21 +49,16 @@ export default function Register() {
 
       console.log("📤 Enviando registro:", registerData);
 
-      // Intentar registro
       const response = await api.post("auth/register/", registerData);
 
       console.log("✅ Respuesta del servidor:", response.data);
 
-      // Caso 1: El backend devuelve token y usuario directamente
       if (response.data.token && response.data.user) {
         localStorage.setItem("token", response.data.token);
         login(response.data.user);
         navigate("/dashboard");
-      }
-      // Caso 2: El backend devuelve solo token (sin usuario)
-      else if (response.data.token) {
+      } else if (response.data.token) {
         localStorage.setItem("token", response.data.token);
-        // Crear objeto de usuario básico
         const user = {
           name: formData.name,
           email: formData.email,
@@ -64,11 +66,8 @@ export default function Register() {
         };
         login(user);
         navigate("/dashboard");
-      }
-      // Caso 3: Solo crea el usuario, sin token
-      else {
-        console.log("✅ Usuario creado, redirigiendo a login");
-        alert("Cuenta creada exitosamente. Por favor inicia sesión.");
+      } else {
+        alert("Cuenta creada exitosamente. Ahora inicia sesión.");
         navigate("/login");
       }
 
@@ -76,37 +75,23 @@ export default function Register() {
       console.error("❌ Error completo:", err);
       console.error("❌ Respuesta del error:", err.response?.data);
 
-      // Manejo específico de errores
       if (err.response?.data) {
-        const errorData = err.response.data;
+        const e = err.response.data;
 
-        // Errores comunes de Django/DRF
-        if (errorData.email) {
-          setError(`Email: ${errorData.email[0] || errorData.email}`);
-        } else if (errorData.password) {
-          setError(`Contraseña: ${errorData.password[0] || errorData.password}`);
-        } else if (errorData.username) {
-          setError(`Usuario: ${errorData.username[0] || errorData.username}`);
-        } else if (errorData.name) {
-          setError(`Nombre: ${errorData.name[0] || errorData.name}`);
-        } else if (errorData.message) {
-          setError(errorData.message);
-        } else if (errorData.detail) {
-          setError(errorData.detail);
-        } else if (errorData.error) {
-          setError(errorData.error);
-        } else {
-          setError(`Error: ${JSON.stringify(errorData)}`);
-        }
-      } else if (err.request) {
-        setError("No se pudo conectar con el servidor. Verifica tu conexión.");
+        if (e.username) setError(e.username[0] || e.username);
+        else if (e.email) setError(e.email[0] || e.email);
+        else if (e.password) setError(e.password[0] || e.password);
+        else if (e.name) setError(e.name[0] || e.name);
+        else if (e.message) setError(e.message);
+        else setError(JSON.stringify(e));
       } else {
-        setError("Error inesperado. Intenta nuevamente.");
+        setError("No se pudo conectar con el servidor.");
       }
     } finally {
       setLoading(false);
     }
   };
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-50 flex items-center justify-center p-4">
