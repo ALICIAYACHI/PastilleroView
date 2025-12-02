@@ -11,7 +11,7 @@ db.sqlite3
 
 # Environment
 venv/
-frontend/
+frontend/ # esto se encuentra en otro repositorio no es necesario quitarlo del .gitignore
 .env
 .env.*
 
